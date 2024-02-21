@@ -1,0 +1,87 @@
+﻿@page "/hospitalization"
+@using System;
+@using BlazorApp1.Models;
+@rendermode RenderMode.InteractiveServer
+
+<PageTitle>Hospitalization</PageTitle>
+
+<section>
+    <EditForm OnSubmit="@Submit" FormName="HospitalizationForm" Model="@patient">
+        <DataAnnotationsValidator />
+        <h3>Госпитализация</h3>
+        <p>
+            <InputText placeholder="Код медицинской карты" @bind-Value="@medicalCald" />
+        </p>
+        <button onclick="@findPatient">Найти пациента</button>
+        <p>
+            <InputText placeholder="Имя" @bind-Value="patient.Firstname" />
+            <ValidationMessage For="@(()=>patient.Firstname)" />
+        </p>
+        <p>
+            <InputText placeholder="Фамилия" @bind-Value="patient.Surname" />
+            <ValidationMessage For="@(()=>patient.Surname)" />
+        </p>
+        <p>
+            <InputText placeholder="Отчество" @bind-Value="patient.Lastname" />
+            <ValidationMessage For="@(()=>patient.Lastname)" />
+        </p>
+        <p>
+            <InputText placeholder="Серия и номер паспорта" @bind-Value="patient.PassportSeriesAndNumber" />
+            <ValidationMessage For="@(()=>patient.PassportSeriesAndNumber)" />
+        </p>
+        <p>
+            <InputDate @bind-Value="patient.BirthDate" />
+            <ValidationMessage For="@(()=>patient.BirthDate)" />
+        </p>
+        <p>
+            <InputSelect class="select" @bind-Value="patient.Gender">
+                <option class="option" selected value="Male">Мужской</option>
+                <option class="option" value="Female">Женский</option>
+            </InputSelect>
+            <ValidationMessage For="@(()=>patient.Gender)" />
+        </p>
+        <p>
+            <InputText placeholder="Адрес" @bind-Value="patient.Address" />
+            <ValidationMessage For="@(()=>patient.Address)" />
+        </p>
+        <p>
+            <InputText placeholder="Номер телефона" @bind-Value="patient.PhoneNumber" />
+            <ValidationMessage For="@(()=>patient.PhoneNumber)" />
+        </p>
+        <p>
+            <InputText placeholder="Электронная почта" @bind-Value="patient.Email" />
+            <ValidationMessage For="@(()=>patient.Email)" />
+        </p>
+        <p>
+            <InputNumber placeholder="Номер страхового полиса" @bind-Value="patient.InsurancePolicy" />
+            <ValidationMessage For="@(()=>patient.InsurancePolicy)" />
+        </p>
+        <p>
+            <InputDate @bind-Value="patient.InsurancePolicyExpireDate" />
+            <ValidationMessage For="@(()=>patient.InsurancePolicyExpireDate)" />
+        </p>
+    </EditForm>
+</section>
+
+@code {
+    Patient patient = new();
+    string medicalCald=null;
+    void findPatient()
+    {
+        using(ClinicContext db = new())
+        {
+            
+            Patient? p = db.Patients.Where(p=>p.MedicalCard==medicalCald).FirstOrDefault();
+            if (p != null)
+            {
+                patient.Firstname = p.Firstname;
+                
+            }
+        }
+    }
+
+    void Submit()
+    {
+        
+    }
+}
