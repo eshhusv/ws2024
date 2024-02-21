@@ -1,0 +1,184 @@
+﻿@page "/"
+@using Aspose.Words
+@using Aspose.Words.Replacing
+@using BlazorApp1.Models
+@using System;
+@using System.Drawing;
+@using System.Drawing.Imaging;
+@using System.IO;
+@using QRCoder;
+@rendermode RenderMode.InteractiveServer
+
+
+<PageTitle>Registration</PageTitle>
+<section>
+    <img alt="" src="@QRByte" width="300"/>
+    <EditForm OnSubmit="@Submit" FormName="PatientForm" EditContext="editContext">
+        <DataAnnotationsValidator />
+        <h3>Регистрация</h3>
+        <p>
+            <InputText placeholder="Имя" @bind-Value="patient.Firstname" />
+            <ValidationMessage For="@(()=>patient.Firstname)"/>
+        </p>
+        <p>
+            <InputText placeholder="Фамилия" @bind-Value="patient.Surname" />
+            <ValidationMessage For="@(()=>patient.Surname)" />
+        </p>
+        <p>
+            <InputText placeholder="Отчество" @bind-Value="patient.Lastname" />
+            <ValidationMessage For="@(()=>patient.Lastname)" />
+        </p>
+        <p>
+            <InputText placeholder="Серия и номер паспорта" @bind-Value="patient.PassportSeriesAndNumber" />
+            <ValidationMessage For="@(()=>patient.PassportSeriesAndNumber)" />
+        </p>
+        <p>
+            <InputDate @bind-Value="patient.BirthDate" />
+            <ValidationMessage For="@(()=>patient.BirthDate)" />
+        </p>
+        <p>
+            <InputSelect class="select" @bind-Value="patient.Gender">
+                <option class="option" selected value="Male">Мужской</option>
+                <option class="option" value="Female">Женский</option>
+            </InputSelect>
+            <ValidationMessage For="@(()=>patient.Gender)" />
+        </p>
+        <p>
+            <InputText placeholder="Адрес" @bind-Value="patient.Address" />
+            <ValidationMessage For="@(()=>patient.Address)" />
+        </p>
+        <p>
+            <InputText placeholder="Номер телефона" @bind-Value="patient.PhoneNumber" />
+            <ValidationMessage For="@(()=>patient.PhoneNumber)" />
+        </p>
+        <p>
+            <InputText placeholder="Электронная почта" @bind-Value="patient.Email" />
+            <ValidationMessage For="@(()=>patient.Email)" />
+        </p>
+        <p>
+            <InputNumber placeholder="Номер страхового полиса" @bind-Value="patient.InsurancePolicy" />
+            <ValidationMessage For="@(()=>patient.InsurancePolicy)" />
+        </p>
+        <p>
+            <InputDate @bind-Value="patient.InsurancePolicyExpireDate"/>
+            <ValidationMessage For="@(()=>patient.InsurancePolicyExpireDate)" />
+        </p>
+        <button type="submit">Зарегистрироваться</button>
+        <p class="vanya">@message</p>
+    </EditForm>
+</section>    
+@code 
+{
+
+    Patient patient=new Patient();
+    string message = "";
+    EditContext? editContext;
+    string org = "Clinic";
+    string executor = "исполнитель";
+    string postAndName = "post name";
+    string post = "post";
+    string arp = "a r p";
+    string nap = "nap";
+    string value = "значение";
+
+
+    protected override void OnInitialized()
+    {
+        editContext = new(patient);
+    }
+
+    public string QRByte = "";
+
+    public void GenerateQRCode(string QRCodeText)
+    {
+        if (!string.IsNullOrEmpty(QRCodeText))
+        {
+            using MemoryStream ms = new();
+            QRCodeGenerator qrCodeGenerate = new();
+            QRCodeData qrCodeData = qrCodeGenerate.CreateQrCode(QRCodeText, QRCodeGenerator.ECCLevel.Q);
+            QRCode qrCode = new(qrCodeData);
+            using Bitmap qrBitMap = qrCode.GetGraphic(20);
+            qrBitMap.Save(ms, ImageFormat.Png);
+            string base64 = Convert.ToBase64String(ms.ToArray());
+            QRByte = string.Format("data:image/png;base64,{0}", base64);
+        }
+    }
+
+    public Home()
+    {
+        patient = new();
+        patient.InsurancePolicyExpireDate = DateOnly.FromDateTime(DateTime.Now);
+        patient.BirthDate = DateOnly.FromDateTime(DateTime.Now);
+        patient.Gender = "Male";
+    }
+
+    void Submit(){
+        if (editContext != null && editContext.Validate())
+        {
+            Random random = new Random();
+            using (ClinicContext db = new ClinicContext())
+            {
+                Patient? p = db.Patients.Where(p => p.PassportSeriesAndNumber == patient.PassportSeriesAndNumber).FirstOrDefault();
+                if (p == null)
+                {
+                    MedicalCard card = new MedicalCard();
+                    string res = string.Empty;
+                    for (int i = 0; i < 10; i++)
+                    {
+                        res += (char)random.Next(97, 123);
+                    }
+                    GenerateQRCode(res);
+                    card.MedicalCardId = res;
+                    card.DateOfIssue = DateOnly.FromDateTime(DateTime.Now);
+                    db.MedicalCards.Add(card);
+                    patient.MedicalCard = card.MedicalCardId;
+                    db.Patients.Add(patient);
+                    db.SaveChanges();
+
+
+                    string fullname = patient.Firstname + " " + patient.Surname + " " + patient.Lastname;
+                    Dictionary<string, string> words = new Dictionary<string, string>()
+                    {
+                            {"[число, месяц, год]", DateTime.Now.ToString()},
+                            {"[место подписания договора]", org},
+                            {"[Наименование медицинской организации/фамилия, имя и отчество (при наличии) индивидуального предпринимателя]", executor},
+                            {"[должность, Ф. И. О.]", postAndName},
+                            {"[Устава, Положения, Доверенности]", arp},
+                            {"[фамилия, имя, отчество (при наличии)]", fullname},
+                            {"[наименование и фирменное наименование (при наличии) медицинской организации - юридического лица]", executor},
+                            {"[значение]", patient.PatientId.ToString()},
+                            {"[число, месяц год]", DateTime.Now.ToString()},
+                            {"[вписать нужное]", DateTime.Now.ToString()},
+                            {"[наименование, адрес и телефон лицензирующего органа]", nap},
+                            {"[значение1]", value},
+                            {"[должность работника медицинской организации", post}
+                    };
+
+                   
+                    string path = @$"{Environment.CurrentDirectory}\form.docx";
+                    string? newPath = @$"{Environment.CurrentDirectory}\{res}.docx";
+                    FileInfo fileInf = new FileInfo(path);
+                    if (fileInf.Exists)
+                    {
+                        fileInf.CopyTo(newPath, true);
+                    }
+                    Document doc = new Document(newPath);
+                    foreach(var word in words)
+                    {
+                        doc.Range.Replace(word.Key,word.Value, new FindReplaceOptions(FindReplaceDirection.Forward));
+                    }
+                    doc.Save(newPath);
+
+                }
+                else
+                {
+                    message = "Пользователь уже существует!";
+                }
+            }
+        }
+        else
+        {
+            message = "Тема убью";
+        }
+    }
+}
