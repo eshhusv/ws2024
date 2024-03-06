@@ -7,15 +7,19 @@ namespace BlazorApp1.Models
     {
         public int EventId { get; set; }
 
+        public string EventCode { get; set; }
+
         public string EventName { get; set; } = null!;
 
         public DateOnly EventDate { get; set; }
 
+        public string EvenetTime { get; set; }
+
         public string EventType { get; set; } = null!;
 
-        public string EventResult { get; set; } = null!;
+        public string EventResult { get; set; }
 
-        public string EventRecommendations { get; set; } = null!;
+        public string EventRecommendations { get; set; }
 
         public int DoctorId { get; set; }
 

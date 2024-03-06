@@ -51,8 +51,13 @@ public  class ClinicContext : DbContext
             entity.ToTable("Event");
 
             entity.Property(e => e.EventId).HasColumnName("Event_ID");
+            entity.Property(e => e.EventCode)
+                .HasMaxLength(10)
+                .IsFixedLength()
+                .HasColumnName("Event_code");
             entity.Property(e => e.DoctorId).HasColumnName("Doctor_ID");
             entity.Property(e => e.EventDate).HasColumnName("Event_date");
+            entity.Property(e => e.EvenetTime).HasColumnName("Event_time");
             entity.Property(e => e.EventName)
                 .HasMaxLength(100)
                 .IsFixedLength()
